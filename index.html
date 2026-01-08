@@ -3,50 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>METO MATRIX</title>
 
-<title>METO Pocket Tool – MATRIX</title>
-
-<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00ff88">
 
 <style>
 :root{
-  --bg:#000; --g:#00ff88; --gd:#00cc6a; --txt:#b7ffda;
+  --bg:#000;
+  --g:#00ff88;
+  --gd:#00cc6a;
+  --txt:#b7ffda;
 }
-*{box-sizing:border-box}
 body{
-  margin:0;background:var(--bg);color:var(--txt);
-  font-family:"Courier New", monospace;overflow:hidden
+  margin:0;
+  background:var(--bg);
+  color:var(--txt);
+  font-family:"Courier New", monospace;
+  overflow:hidden;
 }
 canvas{position:fixed;inset:0;z-index:1}
 .app{
-  max-width:360px;margin:12px auto;position:relative;z-index:2;
-  border:2px solid var(--gd);border-radius:14px;padding:8px
+  max-width:380px;
+  margin:10px auto;
+  z-index:2;
+  position:relative;
+  border:2px solid var(--gd);
+  border-radius:14px;
+  padding:8px;
 }
 .screen{
-  background:rgba(0,0,0,.85);
+  background:rgba(0,0,0,.88);
   border:1px solid var(--gd);
   border-radius:10px;
   padding:10px;
-  min-height:360px
+  min-height:420px;
 }
 .header{text-align:center}
 .header h1{margin:0;color:var(--g)}
-.menu{list-style:none;padding:0;margin-top:10px}
+.status{font-size:12px;opacity:.8}
+.menu{list-style:none;padding:0;margin-top:12px}
 .menu li{padding:6px}
 .menu li.active{
   background:rgba(0,255,136,.15);
   border-left:3px solid var(--g)
 }
-.footer{display:flex;gap:5px;margin-top:10px}
+.footer{
+  display:flex;
+  gap:5px;
+  margin-top:12px
+}
 button{
-  flex:1;background:#02140b;color:var(--g);
+  flex:1;
+  background:#02140b;
+  color:var(--g);
   border:1px solid var(--gd);
   border-radius:6px;
   padding:6px;
   font-family:inherit
 }
+.small{font-size:13px;opacity:.85}
 </style>
 </head>
 
@@ -55,114 +71,168 @@ button{
 <canvas id="matrix"></canvas>
 
 <div class="app">
-  <div class="screen">
-    <div class="header">
-      <h1>METO</h1>
-      <small>MATRIX Pocket Tool</small>
-    </div>
+<div class="screen">
 
-    <ul class="menu" id="menu">
-      <li class="active">Wi-Fi Tools</li>
-      <li>Bluetooth</li>
-      <li>NFC / RFID</li>
-      <li>Infrared</li>
-      <li>Settings</li>
-      <li>About</li>
-    </ul>
+<div class="header">
+  <h1>METO MATRIX</h1>
+  <div class="status" id="topStatus"></div>
+</div>
 
-    <div class="footer">
-      <button>▲</button>
-      <button>OK</button>
-      <button>▼</button>
-      <button>⬅</button>
-    </div>
-  </div>
+<!-- HOME -->
+<div id="home">
+<ul class="menu" id="menu">
+  <li class="active">Dashboard</li>
+  <li>Network Center</li>
+  <li>Device Info</li>
+  <li>Battery</li>
+  <li>Security</li>
+  <li>Settings</li>
+  <li>About</li>
+</ul>
+</div>
+
+<!-- VIEW -->
+<div id="view" style="display:none">
+  <h3 id="viewTitle"></h3>
+  <div id="viewBody" class="small"></div>
+</div>
+
+<div class="footer">
+  <button>▲</button>
+  <button>OK</button>
+  <button>▼</button>
+  <button>⬅</button>
+</div>
+
+</div>
 </div>
 
 <script>
-/* MATRIX RAIN */
+/* MATRIX */
 const c=document.getElementById("matrix"),ctx=c.getContext("2d");
 function resize(){c.width=innerWidth;c.height=innerHeight}
 resize();onresize=resize;
 const chars="01METO";
-const cols=Math.floor(c.width/14);
-const drops=Array(cols).fill(1);
+const drops=Array(Math.floor(c.width/14)).fill(1);
 setInterval(()=>{
-  ctx.fillStyle="rgba(0,0,0,.1)";
-  ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#00ff88";
-  ctx.font="14px monospace";
-  for(let i=0;i<drops.length;i++){
-    const t=chars[Math.floor(Math.random()*chars.length)];
-    ctx.fillText(t,i*14,drops[i]*14);
-    if(drops[i]*14>c.height&&Math.random()>.95)drops[i]=0;
-    drops[i]++;
-  }
+ ctx.fillStyle="rgba(0,0,0,.1)";
+ ctx.fillRect(0,0,c.width,c.height);
+ ctx.fillStyle="#00ff88";
+ ctx.font="14px monospace";
+ drops.forEach((y,i)=>{
+  ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*14,y*14);
+  drops[i]=(y*14>c.height&&Math.random()>.95)?0:y+1;
+ });
 },50);
-</script>
+
+/* SYSTEM DATA */
+function topBar(){
+ document.getElementById("topStatus").innerText=
+  (navigator.onLine?"● Online":"● Offline")+" | "+
+  new Date().toLocaleTimeString();
+}
+setInterval(topBar,1000);topBar();
+
+/* MENU SYSTEM */
+const menuItems=document.querySelectorAll("#menu li");
+const home=document.getElementById("home");
+const view=document.getElementById("view");
+const viewTitle=document.getElementById("viewTitle");
+const viewBody=document.getElementById("viewBody");
+const buttons=document.querySelectorAll(".footer button");
+let idx=0,inView=false;
+
+function render(){
+ menuItems.forEach((li,i)=>li.classList.toggle("active",i===idx));
+}
+function openView(title,html){
+ inView=true;
+ home.style.display="none";
+ view.style.display="block";
+ viewTitle.innerText=title;
+ viewBody.innerHTML=html;
+}
+function back(){
+ inView=false;
+ view.style.display="none";
+ home.style.display="block";
+}
+
+/* REAL CONTENT */
+function dashboard(){
+ openView("Dashboard",`
+ Time: ${new Date().toLocaleString()}<br>
+ Online: ${navigator.onLine}<br>
+ Platform: ${navigator.platform}<br>
+ PWA: ${window.matchMedia('(display-mode: standalone)').matches}
+ `);
+}
+function network(){
+ const c=navigator.connection||{};
+ openView("Network Center",`
+ Type: ${c.effectiveType||"N/A"}<br>
+ Downlink: ${c.downlink||"?"} Mb/s<br>
+ RTT: ${c.rtt||"?"} ms
+ `);
+}
+function device(){
+ openView("Device Info",`
+ Resolution: ${screen.width}x${screen.height}<br>
+ Orientation: ${screen.orientation.type}<br>
+ Memory: ${navigator.deviceMemory||"?"} GB<br>
+ Touch: ${'ontouchstart'in window}
+ `);
+}
+function battery(){
+ navigator.getBattery().then(b=>{
+ openView("Battery",`
+ Level: ${Math.round(b.level*100)}%<br>
+ Charging: ${b.charging}
+ `);
+ });
+}
+function security(){
+ openView("Security",`
+ HTTPS: ${location.protocol==="https:"}<br>
+ Service Worker: ${'serviceWorker'in navigator}<br>
+ Secure Context: ${window.isSecureContext}
+ `);
+}
+function settings(){
+ openView("Settings",`
+ Matrix Effect: ON<br>
+ Performance: Auto<br>
+ Language: AR / EN
+ `);
+}
+function about(){
+ openView("About",`
+ METO MATRIX<br>
+ System Utility PWA<br>
+ Built with ❤️
+ `);
+}
+
+/* BUTTONS */
+buttons[0].onclick=()=>{if(!inView&&idx>0){idx--;render();}};
+buttons[2].onclick=()=>{if(!inView&&idx<menuItems.length-1){idx++;render();}};
+buttons[1].onclick=()=>{
+ if(inView) return;
+ [
+  dashboard,network,device,battery,
+  security,settings,about
+ ][idx]();
+};
+buttons[3].onclick=()=>{if(inView) back();};
+
+render();
 </script>
 
-<!-- Service Worker -->
 <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
+if("serviceWorker"in navigator){
+ navigator.serviceWorker.register("sw.js");
 }
 </script>
-<!-- Service Worker -->
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
-}
-</script>
-<script>
-const menu = document.querySelectorAll("#menu li");
-let index = 0;
-let inSection = false;
 
-function renderMenu() {
-  menu.forEach((item, i) => {
-    item.classList.toggle("active", i === index);
-  });
-}
-
-document.querySelectorAll(".footer button")[0].onclick = () => {
-  if (!inSection && index > 0) {
-    index--;
-    renderMenu();
-  }
-};
-
-document.querySelectorAll(".footer button")[2].onclick = () => {
-  if (!inSection && index < menu.length - 1) {
-    index++;
-    renderMenu();
-  }
-};
-
-document.querySelectorAll(".footer button")[1].onclick = () => {
-  if (!inSection) {
-    inSection = true;
-    document.querySelector(".screen").innerHTML = `
-      <div class="header">
-        <h1>${menu[index].innerText}</h1>
-        <small>قيد التطوير…</small>
-      </div>
-      <p style="margin-top:20px;opacity:.7">
-        هذه شاشة تجريبية.<br>
-        سيتم إضافة الأدوات لاحقًا.
-      </p>
-    `;
-  }
-};
-
-document.querySelectorAll(".footer button")[3].onclick = () => {
-  if (inSection) {
-    inSection = false;
-    location.reload();
-  }
-};
-
-renderMenu();
-      </script>
 </body>
 </html>
