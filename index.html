@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>METO Pocket Tool – MATRIX</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00ff88">
+
+<style>
+:root{
+  --bg:#000; --g:#00ff88; --gd:#00cc6a; --txt:#b7ffda;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--txt);
+  font-family:"Courier New", monospace;overflow:hidden
+}
+canvas{position:fixed;inset:0;z-index:1}
+.app{
+  max-width:360px;margin:12px auto;position:relative;z-index:2;
+  border:2px solid var(--gd);border-radius:14px;padding:8px
+}
+.screen{
+  background:rgba(0,0,0,.85);
+  border:1px solid var(--gd);
+  border-radius:10px;
+  padding:10px;
+  min-height:360px
+}
+.header{text-align:center}
+.header h1{margin:0;color:var(--g)}
+.menu{list-style:none;padding:0;margin-top:10px}
+.menu li{padding:6px}
+.menu li.active{
+  background:rgba(0,255,136,.15);
+  border-left:3px solid var(--g)
+}
+.footer{display:flex;gap:5px;margin-top:10px}
+button{
+  flex:1;background:#02140b;color:var(--g);
+  border:1px solid var(--gd);
+  border-radius:6px;
+  padding:6px;
+  font-family:inherit
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="app">
+  <div class="screen">
+    <div class="header">
+      <h1>METO</h1>
+      <small>MATRIX Pocket Tool</small>
+    </div>
+
+    <ul class="menu" id="menu">
+      <li class="active">Wi-Fi Tools</li>
+      <li>Bluetooth</li>
+      <li>NFC / RFID</li>
+      <li>Infrared</li>
+      <li>Settings</li>
+      <li>About</li>
+    </ul>
+
+    <div class="footer">
+      <button>▲</button>
+      <button>OK</button>
+      <button>▼</button>
+      <button>⬅</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* MATRIX RAIN */
+const c=document.getElementById("matrix"),ctx=c.getContext("2d");
+function resize(){c.width=innerWidth;c.height=innerHeight}
+resize();onresize=resize;
+const chars="01METO";
+const cols=Math.floor(c.width/14);
+const drops=Array(cols).fill(1);
+setInterval(()=>{
+  ctx.fillStyle="rgba(0,0,0,.1)";
+  ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00ff88";
+  ctx.font="14px monospace";
+  for(let i=0;i<drops.length;i++){
+    const t=chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t,i*14,drops[i]*14);
+    if(drops[i]*14>c.height&&Math.random()>.95)drops[i]=0;
+    drops[i]++;
+  }
+},50);
+</script>
+
+<!-- Service Worker -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
