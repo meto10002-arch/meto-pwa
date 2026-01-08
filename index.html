@@ -15,6 +15,7 @@
   --gd:#00cc6a;
   --txt:#b7ffda;
 }
+*{box-sizing:border-box}
 body{
   margin:0;
   background:var(--bg);
@@ -22,12 +23,21 @@ body{
   font-family:"Courier New", monospace;
   overflow:hidden;
 }
-canvas{position:fixed;inset:0;z-index:1}
+
+/* MATRIX BACKGROUND */
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:1;
+  pointer-events:none; /* الحل الذهبي */
+}
+
+/* APP */
 .app{
   max-width:380px;
   margin:10px auto;
-  z-index:2;
   position:relative;
+  z-index:2;
   border:2px solid var(--gd);
   border-radius:14px;
   padding:8px;
@@ -39,19 +49,47 @@ canvas{position:fixed;inset:0;z-index:1}
   padding:10px;
   min-height:420px;
 }
-.header{text-align:center}
-.header h1{margin:0;color:var(--g)}
-.status{font-size:12px;opacity:.8}
-.menu{list-style:none;padding:0;margin-top:12px}
-.menu li{padding:6px}
+.header{
+  text-align:center;
+}
+.header h1{
+  margin:0;
+  color:var(--g);
+}
+.status{
+  font-size:12px;
+  opacity:.8;
+}
+
+/* MENU */
+.menu{
+  list-style:none;
+  padding:0;
+  margin-top:14px;
+}
+.menu li{
+  padding:6px;
+}
 .menu li.active{
   background:rgba(0,255,136,.15);
-  border-left:3px solid var(--g)
+  border-left:3px solid var(--g);
 }
+
+/* VIEW */
+#view{
+  display:none;
+  margin-top:10px;
+}
+.small{
+  font-size:13px;
+  opacity:.85;
+}
+
+/* FOOTER */
 .footer{
   display:flex;
-  gap:5px;
-  margin-top:12px
+  gap:6px;
+  margin-top:12px;
 }
 button{
   flex:1;
@@ -60,9 +98,11 @@ button{
   border:1px solid var(--gd);
   border-radius:6px;
   padding:6px;
-  font-family:inherit
+  font-family:inherit;
 }
-.small{font-size:13px;opacity:.85}
+button:active{
+  background:#04351e;
+}
 </style>
 </head>
 
@@ -80,157 +120,175 @@ button{
 
 <!-- HOME -->
 <div id="home">
-<ul class="menu" id="menu">
-  <li class="active">Dashboard</li>
-  <li>Network Center</li>
-  <li>Device Info</li>
-  <li>Battery</li>
-  <li>Security</li>
-  <li>Settings</li>
-  <li>About</li>
-</ul>
+  <ul class="menu" id="menu">
+    <li class="active">Dashboard</li>
+    <li>Network</li>
+    <li>Device</li>
+    <li>Battery</li>
+    <li>Security</li>
+    <li>Settings</li>
+    <li>About</li>
+  </ul>
 </div>
 
 <!-- VIEW -->
-<div id="view" style="display:none">
+<div id="view">
   <h3 id="viewTitle"></h3>
   <div id="viewBody" class="small"></div>
 </div>
 
 <div class="footer">
-  <button>▲</button>
-  <button>OK</button>
-  <button>▼</button>
-  <button>⬅</button>
+  <button id="up">▲</button>
+  <button id="ok">OK</button>
+  <button id="down">▼</button>
+  <button id="back">⬅</button>
 </div>
 
 </div>
 </div>
 
 <script>
-/* MATRIX */
+/* ================= MATRIX ================= */
 const c=document.getElementById("matrix"),ctx=c.getContext("2d");
 function resize(){c.width=innerWidth;c.height=innerHeight}
 resize();onresize=resize;
 const chars="01METO";
-const drops=Array(Math.floor(c.width/14)).fill(1);
+const cols=Math.floor(c.width/14);
+const drops=Array(cols).fill(1);
+
 setInterval(()=>{
- ctx.fillStyle="rgba(0,0,0,.1)";
- ctx.fillRect(0,0,c.width,c.height);
- ctx.fillStyle="#00ff88";
- ctx.font="14px monospace";
- drops.forEach((y,i)=>{
-  ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*14,y*14);
-  drops[i]=(y*14>c.height&&Math.random()>.95)?0:y+1;
- });
+  ctx.fillStyle="rgba(0,0,0,.1)";
+  ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00ff88";
+  ctx.font="14px monospace";
+  for(let i=0;i<drops.length;i++){
+    const t=chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t,i*14,drops[i]*14);
+    if(drops[i]*14>c.height&&Math.random()>.95)drops[i]=0;
+    drops[i]++;
+  }
 },50);
 
-/* SYSTEM DATA */
-function topBar(){
- document.getElementById("topStatus").innerText=
-  (navigator.onLine?"● Online":"● Offline")+" | "+
-  new Date().toLocaleTimeString();
+/* ================= TOP STATUS ================= */
+function updateStatus(){
+  document.getElementById("topStatus").innerText =
+    (navigator.onLine?"● Online":"● Offline") +
+    " | " + new Date().toLocaleTimeString();
 }
-setInterval(topBar,1000);topBar();
+setInterval(updateStatus,1000);
+updateStatus();
 
-/* MENU SYSTEM */
+/* ================= NAVIGATION ================= */
 const menuItems=document.querySelectorAll("#menu li");
 const home=document.getElementById("home");
 const view=document.getElementById("view");
 const viewTitle=document.getElementById("viewTitle");
 const viewBody=document.getElementById("viewBody");
-const buttons=document.querySelectorAll(".footer button");
-let idx=0,inView=false;
 
-function render(){
- menuItems.forEach((li,i)=>li.classList.toggle("active",i===idx));
-}
-function openView(title,html){
- inView=true;
- home.style.display="none";
- view.style.display="block";
- viewTitle.innerText=title;
- viewBody.innerHTML=html;
-}
-function back(){
- inView=false;
- view.style.display="none";
- home.style.display="block";
+let index=0;
+let inView=false;
+
+function renderMenu(){
+  menuItems.forEach((li,i)=>li.classList.toggle("active",i===index));
 }
 
-/* REAL CONTENT */
+function openView(title,content){
+  inView=true;
+  home.style.display="none";
+  view.style.display="block";
+  viewTitle.innerText=title;
+  viewBody.innerHTML=content;
+}
+
+function backHome(){
+  inView=false;
+  view.style.display="none";
+  home.style.display="block";
+}
+
+/* ================= REAL CONTENT ================= */
 function dashboard(){
- openView("Dashboard",`
- Time: ${new Date().toLocaleString()}<br>
- Online: ${navigator.onLine}<br>
- Platform: ${navigator.platform}<br>
- PWA: ${window.matchMedia('(display-mode: standalone)').matches}
- `);
+  openView("Dashboard",`
+    Time: ${new Date().toLocaleString()}<br>
+    Online: ${navigator.onLine}<br>
+    Platform: ${navigator.platform}<br>
+    PWA: ${window.matchMedia('(display-mode: standalone)').matches}
+  `);
 }
 function network(){
- const c=navigator.connection||{};
- openView("Network Center",`
- Type: ${c.effectiveType||"N/A"}<br>
- Downlink: ${c.downlink||"?"} Mb/s<br>
- RTT: ${c.rtt||"?"} ms
- `);
+  const n=navigator.connection||{};
+  openView("Network",`
+    Type: ${n.effectiveType||"N/A"}<br>
+    Downlink: ${n.downlink||"?"} Mb/s<br>
+    RTT: ${n.rtt||"?"} ms
+  `);
 }
 function device(){
- openView("Device Info",`
- Resolution: ${screen.width}x${screen.height}<br>
- Orientation: ${screen.orientation.type}<br>
- Memory: ${navigator.deviceMemory||"?"} GB<br>
- Touch: ${'ontouchstart'in window}
- `);
+  openView("Device",`
+    Resolution: ${screen.width} x ${screen.height}<br>
+    Orientation: ${screen.orientation?.type||"N/A"}<br>
+    Memory: ${navigator.deviceMemory||"?"} GB<br>
+    Touch: ${"ontouchstart" in window}
+  `);
 }
 function battery(){
- navigator.getBattery().then(b=>{
- openView("Battery",`
- Level: ${Math.round(b.level*100)}%<br>
- Charging: ${b.charging}
- `);
- });
+  if(!navigator.getBattery){
+    openView("Battery","Battery API not supported");
+    return;
+  }
+  navigator.getBattery().then(b=>{
+    openView("Battery",`
+      Level: ${Math.round(b.level*100)}%<br>
+      Charging: ${b.charging}
+    `);
+  });
 }
 function security(){
- openView("Security",`
- HTTPS: ${location.protocol==="https:"}<br>
- Service Worker: ${'serviceWorker'in navigator}<br>
- Secure Context: ${window.isSecureContext}
- `);
+  openView("Security",`
+    HTTPS: ${location.protocol==="https:"}<br>
+    Secure Context: ${window.isSecureContext}<br>
+    Service Worker: ${"serviceWorker" in navigator}
+  `);
 }
 function settings(){
- openView("Settings",`
- Matrix Effect: ON<br>
- Performance: Auto<br>
- Language: AR / EN
- `);
+  openView("Settings",`
+    Matrix: ON<br>
+    Performance: Auto<br>
+    Language: AR / EN
+  `);
 }
 function about(){
- openView("About",`
- METO MATRIX<br>
- System Utility PWA<br>
- Built with ❤️
- `);
+  openView("About",`
+    METO MATRIX<br>
+    System Utility PWA<br>
+    Built with ❤️
+  `);
 }
 
-/* BUTTONS */
-buttons[0].onclick=()=>{if(!inView&&idx>0){idx--;render();}};
-buttons[2].onclick=()=>{if(!inView&&idx<menuItems.length-1){idx++;render();}};
-buttons[1].onclick=()=>{
- if(inView) return;
- [
+const actions=[
   dashboard,network,device,battery,
   security,settings,about
- ][idx]();
+];
+
+/* ================= BUTTON EVENTS ================= */
+document.getElementById("up").onclick=()=>{
+  if(!inView && index>0){index--;renderMenu();}
 };
-buttons[3].onclick=()=>{if(inView) back();};
+document.getElementById("down").onclick=()=>{
+  if(!inView && index<menuItems.length-1){index++;renderMenu();}
+};
+document.getElementById("ok").onclick=()=>{
+  if(!inView) actions[index]();
+};
+document.getElementById("back").onclick=()=>{
+  if(inView) backHome();
+};
 
-render();
-</script>
+renderMenu();
 
-<script>
-if("serviceWorker"in navigator){
- navigator.serviceWorker.register("sw.js");
+/* ================= SERVICE WORKER ================= */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
 }
 </script>
 
