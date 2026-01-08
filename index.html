@@ -100,6 +100,7 @@ setInterval(()=>{
   }
 },50);
 </script>
+</script>
 
 <!-- Service Worker -->
 <script>
@@ -107,6 +108,61 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
 </script>
+<!-- Service Worker -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+<script>
+const menu = document.querySelectorAll("#menu li");
+let index = 0;
+let inSection = false;
 
+function renderMenu() {
+  menu.forEach((item, i) => {
+    item.classList.toggle("active", i === index);
+  });
+}
+
+document.querySelectorAll(".footer button")[0].onclick = () => {
+  if (!inSection && index > 0) {
+    index--;
+    renderMenu();
+  }
+};
+
+document.querySelectorAll(".footer button")[2].onclick = () => {
+  if (!inSection && index < menu.length - 1) {
+    index++;
+    renderMenu();
+  }
+};
+
+document.querySelectorAll(".footer button")[1].onclick = () => {
+  if (!inSection) {
+    inSection = true;
+    document.querySelector(".screen").innerHTML = `
+      <div class="header">
+        <h1>${menu[index].innerText}</h1>
+        <small>قيد التطوير…</small>
+      </div>
+      <p style="margin-top:20px;opacity:.7">
+        هذه شاشة تجريبية.<br>
+        سيتم إضافة الأدوات لاحقًا.
+      </p>
+    `;
+  }
+};
+
+document.querySelectorAll(".footer button")[3].onclick = () => {
+  if (inSection) {
+    inSection = false;
+    location.reload();
+  }
+};
+
+renderMenu();
+      </script>
 </body>
 </html>
